@@ -12,6 +12,7 @@ import CreatePlan from './screens/CreatePlan';
 import Planification from './screens/Planification';
 import PlanificationRevenu from './screens/PlanificationRevenu';
 import RechercheTechnologique from './screens/RechercheTechnologique';
+import TransfertTechno from './screens/TransfertTechno';
 import PlayerSystemDetail from './screens/PlayerSystemDetail';
 import MainLayout from "./components/MainLayout";
 
@@ -31,6 +32,7 @@ function App() {
                     <Route path="/planification-revenu" element={<PlanificationRevenu />} />
                     <Route path="/plans/creer" element={<CreatePlan />} />
                     <Route path="/recherche" element={<RechercheTechnologique />} />
+                    <Route path="/transfert" element={<TransfertTechno />} />
                     <Route path="/player-system-detail/:key" element={<PlayerSystemDetail />} />
                 </Route>
 

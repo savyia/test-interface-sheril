@@ -6,8 +6,8 @@ import {formatTechName} from "../utils/global";
 type SortKey = 'connu' | 'type' | 'nom' | 'recherche' | 'description' | 'marchandises' | 'caracteristiques' | 'parents';
 type SortDir = 'asc' | 'desc';
 
-function typeLabel(t: 0 | 1) {
-  return t === 0 ? 'Bâtiment' : 'Composant';
+function typeLabel(t: 0 | 1 | -1) {
+  return t === 0 ? 'Bâtiment' : t === 1 ? 'Composant' : 'Maîtrise';
 }
 
 

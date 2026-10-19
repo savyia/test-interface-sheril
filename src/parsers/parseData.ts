@@ -10,7 +10,7 @@ export function parseDataXml(text: string): GlobalData {
         const niv = Number(t.getAttribute('niv') || 0);
         const publique = (Number(t.getAttribute('publique') || 0 ) === 1);
         const nom = t.getAttribute('nom') || '';
-        const type = Number(t.getAttribute('type') || 0) as 0 | 1;
+        const type = Number(t.getAttribute('type') || 0) as 0 | 1 | -1;
         const recherche = Number(t.getAttribute('recherche') || 0);
         const description = t.querySelector('description')?.textContent?.trim() || undefined;
         const parents: string[] = [];

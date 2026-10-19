@@ -61,11 +61,30 @@ export type TechSpecification = {
 };
 
 export type Technologie = {
-    base: string; code: string; niv: number; nom: string; type: 0 | 1; // 0 batiment, 1 composant
+    base: string; code: string; niv: number; nom: string; type: 0 | 1 | -1; // 0 batiment, 1 composant, -1 maitrise
     recherche: number; description?: string; parents: string[]; caracteristiques: TechCaracteristique[]; marchandises?: TechMarchandise[];
     specification?: TechSpecification;
     arme?: TechArme;
     publique?: boolean;
+};
+
+// Profil technique d'un joueur, partagé entre membres (codes base64, style blueprint)
+export type TechProfile = {
+    v: number; // version du format
+    tour: number;
+    num: number; // numéro du commandant
+    nom: string;
+    known: string[]; // codes de technologies connues (issu du rapport)
+    atteignable: string[]; // codes recherchables (issu du rapport, contrainte de réception)
+    inProgress: string[]; // saisie manuelle : codes des recherches en cours
+    wishes: string[]; // saisie manuelle : souhaits, l'ordre = la priorité
+};
+
+// Action du plan de transfert : « X donne Y à Z » (un donneur = 1 techno par tour)
+export type TransferAction = {
+    from: number; // numéro du donneur
+    code: string; // code de la technologie donnée
+    to: number; // numéro du receveur
 };
 
 // Composants d'un plan de vaisseau
