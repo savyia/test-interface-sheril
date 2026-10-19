@@ -253,6 +253,20 @@ export default function TransfertTechno() {
     const [onlyGaps, setOnlyGaps] = useState(false);
     const [showAllRows, setShowAllRows] = useState(false);
 
+    // Tri des colonnes (nom, coût, nombre) : clic = croissant, 2e clic = décroissant
+    type SortKey = 'name' | 'cost' | 'owners';
+    const [sortKey, setSortKey] = useState<SortKey | null>(null);
+    const [sortDir, setSortDir] = useState<1 | -1>(1);
+    const toggleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDir(d => (d === 1 ? -1 : 1));
+        } else {
+            setSortKey(key);
+            setSortDir(1);
+        }
+    };
+    const sortIcon = (key: SortKey) => sortKey === key ? (sortDir === 1 ? ' ▲' : ' ▼') : '';
+
     const profileSets = useMemo(() => matrixProfiles.map(p => ({
         nom: p.nom,
         known: new Set(p.known.map(normCode)),
@@ -295,8 +309,17 @@ export default function TransfertTechno() {
             if (viewerNum !== '' && !plan.some(a => normCode(a.code) === nCode && (a.from === viewerNum || a.to === viewerNum))) continue;
             out.push({tech, states, gap, owners});
         }
+        if (sortKey) {
+            out.sort((a, b) => {
+                let r = 0;
+                if (sortKey === 'name') r = a.tech.nom.localeCompare(b.tech.nom) || a.tech.niv - b.tech.niv;
+                else if (sortKey === 'cost') r = a.tech.recherche - b.tech.recherche;
+                else r = a.owners - b.owners;
+                return r * sortDir;
+            });
+        }
         return out;
-    }, [techs, profileSets, filterText, filterType, onlyWished, onlyGaps, showAllRows, viewerNum, plan]);
+    }, [techs, profileSets, filterText, filterType, onlyWished, onlyGaps, showAllRows, viewerNum, plan, sortKey, sortDir]);
 
     const renderCell = (s: RowState, row: MatrixRow, p: TechProfile) => {
         const acts = cellActions.get(`${p.num}|${normCode(row.tech.code)}`) ?? [];
@@ -523,9 +546,9 @@ export default function TransfertTechno() {
                         <table style={{borderCollapse: 'collapse', fontSize: '0.85em'}}>
                             <thead>
                                 <tr>
-                                    <th style={{position: 'sticky', left: 0, top: 0, background: '#1a1a1a', color: '#aaa', textAlign: 'left', padding: '6px 8px', border: '1px solid #333', zIndex: 2}}>Technologie</th>
-                                    <th style={{position: 'sticky', top: 0, background: '#1a1a1a', color: '#aaa', padding: '6px 8px', border: '1px solid #333', zIndex: 1, whiteSpace: 'nowrap'}}>Coût</th>
-                                    <th style={{position: 'sticky', top: 0, background: '#1a1a1a', color: '#aaa', padding: '6px 8px', border: '1px solid #333', zIndex: 1, whiteSpace: 'nowrap'}}>Nombre</th>
+                                    <th onClick={() => toggleSort('name')} title="Trier par nom" style={{position: 'sticky', left: 0, top: 0, background: '#1a1a1a', color: '#aaa', textAlign: 'left', padding: '6px 8px', border: '1px solid #333', zIndex: 2, cursor: 'pointer', userSelect: 'none'}}>Technologie{sortIcon('name')}</th>
+                                    <th onClick={() => toggleSort('cost')} title="Trier par coût" style={{position: 'sticky', top: 0, background: '#1a1a1a', color: '#aaa', padding: '6px 8px', border: '1px solid #333', zIndex: 1, whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none'}}>Coût{sortIcon('cost')}</th>
+                                    <th onClick={() => toggleSort('owners')} title="Trier par nombre de joueurs qui la connaît" style={{position: 'sticky', top: 0, background: '#1a1a1a', color: '#aaa', padding: '6px 8px', border: '1px solid #333', zIndex: 1, whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none'}}>Nombre{sortIcon('owners')}</th>
                                     {matrixProfiles.map(p => (
                                         <th key={p.num} style={{position: 'sticky', top: 0, background: '#1a1a1a', color: '#ccc', padding: '6px 8px', border: '1px solid #333', zIndex: 1, whiteSpace: 'nowrap'}}>
                                             {p.num === rapport?.joueur.numero ? 'Vous' : p.nom}
