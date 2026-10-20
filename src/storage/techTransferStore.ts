@@ -6,6 +6,9 @@ const MANUAL_KEY = 'transfert_manual';      // { [tour]: ManualData }
 const PROFILES_KEY = 'transfert_profiles';  // { [tour]: TechProfile[] }
 const PLAN_KEY = 'transfert_plan';          // { [tour]: TransferAction[] }
 
+// Nombre maximal de tours conservés par carte, pour que le localStorage ne grossisse pas indéfiniment
+const MAX_STORED_TOURS = 30;
+
 export type ManualData = {
     inProgress: string[];
     wishes: string[]; // ordre = priorité
@@ -24,6 +27,18 @@ function readAll<T>(key: string): Record<string, T> {
 
 function writeAll(key: string, value: unknown) {
     localStorage.setItem(key, JSON.stringify(value));
+}
+
+// Conserve seulement les MAX_STORED_TOURS tours les plus récents d'une carte
+// (les clés non numériques sont gardées)
+function pruneTours<T>(all: Record<string, T>): Record<string, T> {
+    Object.keys(all)
+        .map(Number)
+        .filter(t => Number.isFinite(t))
+        .sort((a, b) => b - a)
+        .slice(MAX_STORED_TOURS)
+        .forEach(t => delete all[String(t)]);
+    return all;
 }
 
 // Nettoyage des données lues de localStorage : l'ancien format v1 stockait
@@ -75,7 +90,7 @@ export function getLatestManualBefore(tour: number): ManualData | undefined {
 export function saveManualProfile(tour: number, data: ManualData) {
     const all = readAll<any>(MANUAL_KEY);
     all[String(tour)] = sanitizeManual(data);
-    writeAll(MANUAL_KEY, all);
+    writeAll(MANUAL_KEY, pruneTours(all));
 }
 
 // --- Profils importés ---
@@ -113,14 +128,14 @@ export function saveProfiles(incoming: TechProfile[]): number[] {
         all[String(tour)] = Array.from(byNum.values()).sort((a, b) => a.num - b.num);
         affected.push(tour);
     });
-    writeAll(PROFILES_KEY, all);
+    writeAll(PROFILES_KEY, pruneTours(all));
     return affected;
 }
 
 export function removeProfile(tour: number, num: number) {
     const all = readAll<any[]>(PROFILES_KEY);
     all[String(tour)] = (all[String(tour)] ?? []).filter((p: any) => p?.num !== num);
-    writeAll(PROFILES_KEY, all);
+    writeAll(PROFILES_KEY, pruneTours(all));
 }
 
 // --- Plan du tour ---
@@ -132,5 +147,12 @@ export function getPlan(tour: number): TransferAction[] {
 export function savePlan(tour: number, actions: TransferAction[]) {
     const all = readAll<TransferAction[]>(PLAN_KEY);
     all[String(tour)] = actions;
-    writeAll(PLAN_KEY, all);
+    writeAll(PLAN_KEY, pruneTours(all));
+}
+
+// Efface toutes les données de transfert (les trois cartes) : à appeler quand un rapport est (re)chargé
+export function clearTechTransfer(): void {
+    localStorage.removeItem(MANUAL_KEY);
+    localStorage.removeItem(PROFILES_KEY);
+    localStorage.removeItem(PLAN_KEY);
 }

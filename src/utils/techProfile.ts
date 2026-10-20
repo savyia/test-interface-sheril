@@ -41,11 +41,24 @@ export function decodeProfile(text: string): TechProfile | undefined {
     } catch {
         return undefined;
     }
-    if (raw?.v !== PROFILE_VERSION) return undefined;
+    if (raw?.v !== PROFILE_VERSION && raw?.v !== PROFILE_VERSION - 1) return undefined;
     if (typeof raw.tour !== 'number' || typeof raw.num !== 'number' || typeof raw.nom !== 'string') return undefined;
     if (!Array.isArray(raw.known) || !Array.isArray(raw.atteignable)) return undefined;
+    if (!Array.isArray(raw.inProgress) || !Array.isArray(raw.wishes)) return undefined;
 
     const strings = (list: unknown[]) => list.filter((c): c is string => typeof c === 'string');
+
+    // Migration v1 → v2 : inProgress était une liste de {code, pct}, on ne garde que les codes
+    if (raw.v === PROFILE_VERSION - 1) {
+        const migrated: string[] = [];
+        (Array.isArray(raw.inProgress) ? raw.inProgress : []).forEach((e: unknown) => {
+            const code = typeof e === 'string'
+                ? e
+                : (e && typeof e === 'object' && typeof (e as any).code === 'string' ? (e as any).code : undefined);
+            if (code !== undefined && !migrated.includes(code)) migrated.push(code);
+        });
+        raw.inProgress = migrated;
+    }
 
     return {
         v: PROFILE_VERSION,
@@ -142,17 +155,10 @@ export function validateActions(actions: TransferAction[], profiles: TechProfile
 
 export type TransferCheck = {ok: true} | {ok: false; message: string};
 
-// Vérifie qu'un transfert manuel est jouable avant de l'ajouter au plan
+// Vérifie qu'un transfert manuel est jouable avant de l'ajouter au plan.
+// Délègue à validateActions : les règles du transfert n'y sont définies qu'une seule fois.
 export function checkTransfer(plan: TransferAction[], from: number, to: number, code: string, profiles: TechProfile[]): TransferCheck {
-    if (!code) return {ok: false, message: 'Techno à préciser'};
-    const giver = profiles.find(p => p.num === from);
-    const receiver = profiles.find(p => p.num === to);
-    if (!giver || !receiver) return {ok: false, message: 'Joueur inconnu'};
-    if (from === to) return {ok: false, message: 'Un joueur ne peut pas se donner sa propre techno'};
-    const c = normCode(code);
-    if (!giver.known.some(k => normCode(k) === c)) return {ok: false, message: `${giver.nom} ne connaît pas cette techno`};
-    if (!receiver.atteignable.some(r => normCode(r) === c)) return {ok: false, message: `${receiver.nom} ne peut pas la rechercher`};
-    if (plan.some(a => a.from === from)) return {ok: false, message: `${giver.nom} a déjà donné ce tour`};
-    if (plan.some(a => a.to === to)) return {ok: false, message: `${receiver.nom} a déjà reçu ce tour`};
-    return {ok: true};
+    const validated = validateActions([...plan, {from, to, code}], profiles);
+    const error = validated[validated.length - 1].problems.find(p => p.kind === 'error');
+    return error ? {ok: false, message: error.message} : {ok: true};
 }

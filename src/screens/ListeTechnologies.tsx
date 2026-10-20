@@ -1,15 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useReport } from '../context/ReportContext';
 import { Technologie } from '../types';
-import {formatTechName} from "../utils/global";
+import {formatTechName, techTypeLabel} from "../utils/global";
 
 type SortKey = 'connu' | 'type' | 'nom' | 'recherche' | 'description' | 'marchandises' | 'caracteristiques' | 'parents';
 type SortDir = 'asc' | 'desc';
-
-function typeLabel(t: 0 | 1 | -1) {
-  return t === 0 ? 'Bâtiment' : t === 1 ? 'Composant' : 'Maîtrise';
-}
-
 
 export default function ListeTechnologies() {
   const { global, rapport } = useReport();
@@ -265,7 +260,7 @@ export default function ListeTechnologies() {
                 return (
                   <tr key={t.code} style={rowStyle(t as any)}>
                     <td>{(t as any).connu ? 'Oui' : 'Non'}</td>
-                    <td>{typeLabel(t.type)}</td>
+                    <td>{techTypeLabel(t)}</td>
                     <td title={t.code} style={{ whiteSpace: 'nowrap' }}>{formatTechName(t)}</td>
                     <td style={{ textAlign: 'right' }}>{t.recherche}</td>
                     <td>

@@ -22,9 +22,36 @@ describe('encode/decode profil', () => {
     test('rejette les chaînes invalides ou d\'une autre version', () => {
         expect(decodeProfile('nonsense')).toBeUndefined();
         expect(decodeProfile('')).toBeUndefined();
-        // Un ancien profil v1 (inProgress en {code, pct}) doit être rejeté
-        const v1 = {v: 1, tour: 10, num: 1, nom: 'a', known: [], atteignable: [], inProgress: [{code: 'radarII', pct: 40}], wishes: []};
-        expect(decodeProfile(encodeProfile(v1 as unknown as TechProfile))).toBeUndefined();
+        // versions inconnues (0, 3, absente) toujours refusées
+        const base = {tour: 10, num: 1, nom: 'a', known: [], atteignable: [], inProgress: [], wishes: []};
+        expect(decodeProfile(encodeProfile({v: 0, ...base} as unknown as TechProfile))).toBeUndefined();
+        expect(decodeProfile(encodeProfile({v: 3, ...base} as unknown as TechProfile))).toBeUndefined();
+        expect(decodeProfile(encodeProfile(base as unknown as TechProfile))).toBeUndefined();
+    });
+
+    test('rejette un profil manquant inProgress ou wishes (pas de crash)', () => {
+        const base = {v: PROFILE_VERSION, tour: 10, num: 1, nom: 'a', known: [], atteignable: []};
+        expect(decodeProfile(encodeProfile({...base, inProgress: []} as unknown as TechProfile))).toBeUndefined();
+        expect(decodeProfile(encodeProfile({...base, wishes: []} as unknown as TechProfile))).toBeUndefined();
+    });
+
+    test('migre un ancien profil v1 (inProgress en {code, pct}) vers v2', () => {
+        const v1 = {
+            v: 1, tour: 10, num: 1, nom: 'a', known: ['x'], atteignable: ['y'],
+            inProgress: [{code: 'radarII', pct: 40}, {code: 'radarII', pct: 80}, {code: 'plasmaI', pct: 10}, 42, null],
+            wishes: [],
+        };
+        expect(decodeProfile(encodeProfile(v1 as unknown as TechProfile))).toEqual({
+            v: PROFILE_VERSION, tour: 10, num: 1, nom: 'a', known: ['x'], atteignable: ['y'],
+            inProgress: ['radarII', 'plasmaI'], wishes: [],
+        });
+    });
+
+    test('accepte un profil v1 dont inProgress est déjà en chaînes', () => {
+        const v1 = {v: 1, tour: 10, num: 1, nom: 'a', known: [], atteignable: [], inProgress: ['radarII'], wishes: []};
+        expect(decodeProfile(encodeProfile(v1 as unknown as TechProfile))).toEqual({
+            v: PROFILE_VERSION, tour: 10, num: 1, nom: 'a', known: [], atteignable: [], inProgress: ['radarII'], wishes: [],
+        });
     });
 });
 
@@ -136,12 +163,22 @@ describe('checkTransfer (dépôt sur la matrice)', () => {
     test('refuse si le donneur a déjà donné ce tour', () => {
         const res = checkTransfer([{from: 1, code: 'radarI', to: 2}], 1, 2, 'plasmaI', all);
         expect(res.ok).toBe(false);
-        if (!res.ok) expect(res.message).toContain('a déjà donné');
+        if (!res.ok) expect(res.message).toContain('plus de 1 techno');
     });
 
     test('refuse si le receveur a déjà reçu ce tour', () => {
         const res = checkTransfer([{from: 3, code: 'radarI', to: 2}], 1, 2, 'plasmaI', all);
         expect(res.ok).toBe(false);
-        if (!res.ok) expect(res.message).toContain('a déjà reçu');
+        if (!res.ok) expect(res.message).toContain('reçoit plus de 1 techno');
+    });
+
+    test('refuse si le donneur ou le receveur est inconnu', () => {
+        expect(checkTransfer([], 99, 2, 'plasmaI', all).ok).toBe(false);
+        expect(checkTransfer([], 1, 99, 'plasmaI', all).ok).toBe(false);
+    });
+
+    test('le receveur qui connaît déjà la techno ne bloque pas (simple avertissement)', () => {
+        const knower = profile(3, 'K', ['plasmaI'], []); // connaît plasmaI, ne peut pas la rechercher
+        expect(checkTransfer([], 1, 3, 'plasmaI', [giver, knower]).ok).toBe(true);
     });
 });

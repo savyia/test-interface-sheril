@@ -10,7 +10,9 @@ export function parseDataXml(text: string): GlobalData {
         const niv = Number(t.getAttribute('niv') || 0);
         const publique = (Number(t.getAttribute('publique') || 0 ) === 1);
         const nom = t.getAttribute('nom') || '';
-        const type = Number(t.getAttribute('type') || 0) as 0 | 1 | -1;
+        // Type de technologie : 0 = bâtiment, -1 = maîtrise ; toute autre valeur => 1 (composant)
+        const typeRaw = Number(t.getAttribute('type') || 0);
+        const type: 0 | 1 | -1 = typeRaw === 0 || typeRaw === -1 ? typeRaw : 1;
         const recherche = Number(t.getAttribute('recherche') || 0);
         const description = t.querySelector('description')?.textContent?.trim() || undefined;
         const parents: string[] = [];

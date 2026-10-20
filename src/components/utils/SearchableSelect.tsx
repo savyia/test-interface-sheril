@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function SearchableSelect(props: {
-  // `disabled` : l'option est affichée (ex. valeur courante devenue invalide) mais non sélectionnable
-  options: { value: string; label: string; disabled?: boolean }[];
+  options: { value: string; label: string }[];
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
@@ -58,16 +57,6 @@ export default function SearchableSelect(props: {
     setQuery(sel?.label ?? '');
   }
 
-  // Déplace le surlignage en boucle, en ignorant les options désactivées
-  function stepHighlight(from: number, dir: 1 | -1): number {
-    const n = filtered.length;
-    for (let step = 0; step < n; step++) {
-      const i = (((from + dir * (step + 1)) % n) + n) % n;
-      if (!filtered[i]?.disabled) return i;
-    }
-    return from;
-  }
-
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (!open && (e.key === 'ArrowDown' || e.key === 'Enter')) {
       setOpen(true);
@@ -76,14 +65,14 @@ export default function SearchableSelect(props: {
     }
     if (!open) return;
     if (e.key === 'ArrowDown') {
-      setHighlight(h => stepHighlight(h, 1));
+      setHighlight(h => Math.min(filtered.length - 1, h + 1));
       e.preventDefault();
     } else if (e.key === 'ArrowUp') {
-      setHighlight(h => stepHighlight(h, -1));
+      setHighlight(h => Math.max(0, h - 1));
       e.preventDefault();
     } else if (e.key === 'Enter') {
       const opt = filtered[highlight];
-      if (opt && !opt.disabled) commit(opt.value);
+      if (opt) commit(opt.value);
       e.preventDefault();
     } else if (e.key === 'Escape') {
       setOpen(false);
@@ -131,14 +120,12 @@ export default function SearchableSelect(props: {
               key={o.value}
               role="option"
               aria-selected={value === o.value}
-              aria-disabled={o.disabled || undefined}
-              onMouseEnter={o.disabled ? undefined : () => setHighlight(i)}
-              onMouseDown={o.disabled ? undefined : (e) => { e.preventDefault(); commit(o.value); }}
+              onMouseEnter={() => setHighlight(i)}
+              onMouseDown={(e) => { e.preventDefault(); commit(o.value); }}
               style={{
                 padding: '6px 8px',
-                background: !o.disabled && i === highlight ? '#1e2a44' : 'transparent',
-                cursor: o.disabled ? 'not-allowed' : 'pointer',
-                color: o.disabled ? '#666' : 'inherit',
+                background: i === highlight ? '#1e2a44' : 'transparent',
+                cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
                 overflow: 'hidden'

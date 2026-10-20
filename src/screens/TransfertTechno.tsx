@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useReport} from '../context/ReportContext';
 import {TechProfile, Technologie, TransferAction} from '../types';
-import {formatTechName} from '../utils/global';
+import {formatTechName, typeTag} from '../utils/global';
 import SearchableSelect from '../components/utils/SearchableSelect';
 import Modal from '../components/utils/Modal';
 import {
@@ -37,11 +37,6 @@ const pillStyle: React.CSSProperties = {
 function techLabel(code: string, techs: Technologie[]): string {
     const t = techs.find(x => x.code === code);
     return t ? formatTechName(t) : code;
-}
-
-// Tag de groupe : [B]âtiment, [C]omposant, [M]aitrise
-function typeTag(t: Technologie): string {
-    return t.type === 0 ? '[B]' : t.type === 1 ? '[C]' : '[M]';
 }
 
 export default function TransfertTechno() {
@@ -468,7 +463,9 @@ export default function TransfertTechno() {
                             <span key={p.num} className="badge" style={{background: '#223', color: '#ccc', display: 'inline-flex', alignItems: 'center', gap: 6}}>
                                 {p.num === rapport?.joueur.numero ? 'Vous' : p.nom}
                                 <span style={{color: '#888', fontSize: '0.85em'}}>({p.known.length} connues)</span>
-                                <button onClick={() => removeOne(p)} style={{cursor: 'pointer', background: 'none', border: 'none', color: '#f55'}} title="Retirer">×</button>
+                                {p !== ownProfile && (
+                                    <button onClick={() => removeOne(p)} style={{cursor: 'pointer', background: 'none', border: 'none', color: '#f55'}} title="Retirer">×</button>
+                                )}
                             </span>
                         ))}
                         <button onClick={() => setImportOpen(true)}>Importer des profils</button>
@@ -567,8 +564,8 @@ export default function TransfertTechno() {
                                         <td style={{padding: '4px 8px', border: '1px solid #2a2a2a', whiteSpace: 'nowrap', textAlign: 'center', color: row.owners > 0 ? '#ccc' : '#555'}}>{row.owners}</td>
                                         {row.states.map((s, i) => {
                                             const p = matrixProfiles[i];
-                                            // Cible de dépôt : le receveur peut rechercher la techno
-                                            // (★ ou ▣), n'est pas le donneur, et n'a pas déjà reçu
+                                            // Cible de dépôt : case ▣ (le receveur peut rechercher la techno ;
+                                            // un simple souhait ★ ne suffit pas), qui n'est pas le donneur et n'a pas déjà reçu
                                             const isTarget = dragging !== null && dragging.from !== p.num && s.reach && !usedReceivers.has(p.num);
                                             const canDrag = s.known && !usedGivers.has(p.num);
                                             return (

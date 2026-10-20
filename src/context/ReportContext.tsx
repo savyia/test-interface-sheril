@@ -1,4 +1,5 @@
 import {clearPlanificationRevenu} from '../utils/planificationRevenuStorage';
+import {clearTechTransfer} from '../storage/techTransferStore';
 import React, {createContext, useContext, useEffect, useMemo, useRef, useState, useCallback} from 'react';
 import {GlobalData, Rapport, XY, SystemeDetecte, Note, CombatEvent, Zone} from '../types';
 import {parseRapportXml, addManualDetectedSystems, getCachedDetectedSystems} from '../parsers/parseRapport';
@@ -232,6 +233,7 @@ export function ReportProvider({children}: { children: React.ReactNode }) {
         const latest = latestTourRef.current; // avant l'enregistrement de ce rapport
         await storeRapport(r);
         clearPlanificationRevenu(); // les choix de l'écran de planification des revenus sont à refaire sur le nouveau rapport
+        clearTechTransfer(); // les profils et plans de transfert sont à refaire sur le nouveau rapport
         // Seul le rapport le plus récent est affiché ; un tour plus ancien ne fait qu'enrichir l'historique
         if (latest === undefined || r.tour >= latest) {
             displayRapport(r);

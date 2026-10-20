@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useReport} from '../context/ReportContext';
 import SearchableSelect from "../components/utils/SearchableSelect";
-import {formatTechName } from "../utils/global";
+import {formatTechName, typeTag } from "../utils/global";
 
 type Assign = { code: string; amount: number; percent: number };
 
@@ -274,7 +274,7 @@ export default function RechercheTechnologique() {
                 <div style={{marginBottom: 4}}>Technologie atteignable:</div>
                 <SearchableSelect
                     options={availableTechs.map(t => ({
-                        value: t.code, label: `(${t.recherche}) - ${t.type === 0 ? 'B' : 'C'} - ${formatTechName(t)} `
+                        value: t.code, label: `(${t.recherche}) - ${typeTag(t)} - ${formatTechName(t)} `
                     }))}
                     value={selectedCode}
                     onChange={setSelectedCode}

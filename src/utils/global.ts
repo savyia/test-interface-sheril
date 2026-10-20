@@ -19,6 +19,16 @@ export function formatTechName(t?: Technologie): string {
     return `${t.nom} ${romanFromNiv(t.niv)}`;
 }
 
+// Type de technologie : 0 = bâtiment, 1 = composant, -1 = maîtrise
+export function techTypeLabel(t: { type: number }): string {
+    return t.type === 0 ? 'Bâtiment' : t.type === -1 ? 'Maîtrise' : 'Composant';
+}
+
+// Tag court de type : [B]âtiment, [C]omposant, [M]aîtrise
+export function typeTag(t: { type: number }): string {
+    return t.type === 0 ? '[B]' : t.type === -1 ? '[M]' : '[C]';
+}
+
 export function formatPlannedItems(items: { type: 'building' | 'ship', code: string, quantity: number }[], technologies: Technologie[], plansVaisseaux?: any[]) {
     const buildingStats: Record<string, { nivs: Record<number, { qty: number, unitCost: any }>, totalCost: any }> = {};
     const shipStats: Record<string, { qty: number, unitCost: any, totalCost: any }> = {};
